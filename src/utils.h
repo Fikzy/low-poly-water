@@ -40,7 +40,7 @@ static const GLfloat quad_color[] = {
 };
 
 static const GLfloat quad_vertices[] = {
-    -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.0f,
+    -0.5f, 0.0f, -0.5f, 0.5f, 0.0f, -0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f, 0.5f,
 };
 
 float clamp(float x, float upper, float lower)

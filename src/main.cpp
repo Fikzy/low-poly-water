@@ -65,7 +65,7 @@ int main()
     glDepthFunc(GL_LESS);
 
     // Camera
-    camera = new Camera(glm::vec3(-8.0f, 0.0f, 0.0f));
+    camera = new Camera(glm::vec3(-8.0f, 2.0f, 0.0f));
     projection = glm::perspective(
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 
@@ -80,13 +80,13 @@ int main()
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices,
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices,
                  GL_STATIC_DRAW);
 
     GLuint colorbuffer;
     glGenBuffers(1, &colorbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_color), cube_color,
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_color), quad_color,
                  GL_STATIC_DRAW);
 
     glClearColor(0, 0.1f, 0.2f, 0.8f);
@@ -99,8 +99,10 @@ int main()
 
         // Projection
         auto modelMatrix = glm::mat4(1.0);
+        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(10, 1, 10));
+
         auto viewMatrix = camera->getWorldToViewMatrix();
-        auto mvp = projection * viewMatrix * modelMatrix;
+        auto mvp = projection * viewMatrix * scaledModelMatrix;
 
         GLuint mvpLocation = glGetUniformLocation(cubeShader.id, "MVP");
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
@@ -108,7 +110,7 @@ int main()
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-        glDrawArrays(GL_TRIANGLES, 0, 12 * 3);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glDisableVertexAttribArray(0);
 
         glEnableVertexAttribArray(1);
