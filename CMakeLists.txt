@@ -11,7 +11,7 @@ include_directories(
 add_subdirectory(glad/)
 
 file(GLOB all_SRCS
-	"${PROJECT_SOURCE_DIR}/src/*.h"
+	"${PROJECT_SOURCE_DIR}/src/*.hh"
 	"${PROJECT_SOURCE_DIR}/src/*.cpp"
 )
 

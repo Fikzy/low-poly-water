@@ -5,9 +5,9 @@
 #include <iostream>
 #include <map>
 
-#include "camera.h"
-#include "shader.h"
-#include "utils.h"
+#include "camera.hh"
+#include "shader.hh"
+#include "utils.hh"
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
                   int mods);

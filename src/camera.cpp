@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "camera.hh"
 
 float Camera::currentFrame = 0.0f;
 float Camera::deltaTime = 0.0f;
