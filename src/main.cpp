@@ -73,7 +73,7 @@ int main()
     // Shaders
     Shader cubeShader("cube.vert", "cube.frag");
 
-    // Buffers
+    // Model
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -86,6 +86,7 @@ int main()
     std::cout << "vertices: " << vertices.size() << " | UVs: " << UVs.size()
               << " | normals: " << normals.size() << std::endl;
 
+    // Buffers
     GLuint vertexBuffer;
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -119,12 +120,17 @@ int main()
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, vertices.size());
 
         glEnableVertexAttribArray(1);
         glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
         cubeShader.use();
+
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
