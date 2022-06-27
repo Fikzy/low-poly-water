@@ -81,7 +81,7 @@ int main()
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec2> UVs;
     std::vector<glm::vec3> normals;
-    loadObj("assets/cube.obj", vertices, UVs, normals);
+    loadObj("assets/bunny.obj", vertices, UVs, normals);
 
     std::cout << "vertices: " << vertices.size() << " | UVs: " << UVs.size()
               << " | normals: " << normals.size() << std::endl;
@@ -109,7 +109,7 @@ int main()
 
         // Projection
         auto modelMatrix = glm::mat4(1.0);
-        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(10, 10, 10));
+        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(50));
 
         auto viewMatrix = camera->getWorldToViewMatrix();
         auto mvp = projection * viewMatrix * scaledModelMatrix;

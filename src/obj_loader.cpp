@@ -75,6 +75,10 @@ bool loadObj(const std::string path, std::vector<glm::vec3> &outVertices,
                     outNormals.push_back(tempNormals[normalIndex - 1]);
             }
         }
+        else
+        {
+            printf("Unknown .obj line: %s", line.c_str());
+        }
     }
 
     file.close();
