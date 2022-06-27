@@ -25,5 +25,7 @@ target_link_libraries(POGL
 	glad
 )
 
+file(COPY assets DESTINATION ${PROJECT_SOURCE_DIR}/build)
+
 file(GLOB SHADERS "shaders/*")
 file(COPY ${SHADERS} DESTINATION ${PROJECT_SOURCE_DIR}/build)

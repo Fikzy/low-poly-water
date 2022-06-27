@@ -6,6 +6,7 @@
 #include <map>
 
 #include "camera.hh"
+#include "obj_loader.hh"
 #include "shader.hh"
 #include "utils.hh"
 
@@ -15,8 +16,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void updateCameraRotation(GLFWwindow *window);
 void processInput(GLFWwindow *window);
 
-float SCREEN_W = 1920.0f;
-float SCREEN_H = 1080.0f;
+float SCREEN_W = 1920.0f / 2;
+float SCREEN_H = 1080.0f / 2;
 float FOV = 65.0f;
 float SENSITIVITY = 0.1f;
 
@@ -77,17 +78,25 @@ int main()
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices,
-                 GL_STATIC_DRAW);
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec2> UVs;
+    std::vector<glm::vec3> normals;
+    loadObj("assets/cube.obj", vertices, UVs, normals);
 
-    GLuint colorbuffer;
-    glGenBuffers(1, &colorbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_color), quad_color,
-                 GL_STATIC_DRAW);
+    std::cout << "vertices: " << vertices.size() << " | UVs: " << UVs.size()
+              << " | normals: " << normals.size() << std::endl;
+
+    GLuint vertexBuffer;
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
+                 &vertices[0], GL_STATIC_DRAW);
+
+    GLuint normalBuffer;
+    glGenBuffers(1, &normalBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3),
+                 &normals[0], GL_STATIC_DRAW);
 
     glClearColor(0, 0.1f, 0.2f, 0.8f);
     while (!glfwWindowShouldClose(window))
@@ -99,7 +108,7 @@ int main()
 
         // Projection
         auto modelMatrix = glm::mat4(1.0);
-        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(10, 1, 10));
+        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(10, 10, 10));
 
         auto viewMatrix = camera->getWorldToViewMatrix();
         auto mvp = projection * viewMatrix * scaledModelMatrix;
@@ -108,13 +117,12 @@ int main()
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glDisableVertexAttribArray(0);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, vertices.size());
 
         glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
         cubeShader.use();
 
