@@ -70,13 +70,13 @@ int main()
     projection = glm::perspective(
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 
-    // Shaders
+    // Shader
     Shader cubeShader("cube.vert", "cube.frag");
 
-    // Model
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
+    // Model VAO
+    GLuint modelVAO;
+    glGenVertexArrays(1, &modelVAO);
+    glBindVertexArray(modelVAO); // start recording bindings
 
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec2> UVs;
@@ -93,11 +93,22 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
                  &vertices[0], GL_STATIC_DRAW);
 
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
     GLuint normalBuffer;
     glGenBuffers(1, &normalBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3),
                  &normals[0], GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+    glBindVertexArray(0); // stop recording
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glClearColor(0, 0.1f, 0.2f, 0.8f);
     while (!glfwWindowShouldClose(window))
@@ -117,24 +128,19 @@ int main()
         GLuint mvpLocation = glGetUniformLocation(cubeShader.id, "MVP");
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
+        // Render model
+        glBindVertexArray(modelVAO); // enable
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-
         cubeShader.use();
-
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+        glBindVertexArray(0); // disable
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    glDeleteVertexArrays(1, &modelVAO);
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteBuffers(1, &normalBuffer);
 
     glfwTerminate();
     return 0;
