@@ -1,4 +1,6 @@
 #define GLFW_INCLUDE_NONE
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <GLFW/glfw3.h>
 #include <glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -8,6 +10,7 @@
 #include "camera.hh"
 #include "obj_loader.hh"
 #include "shader.hh"
+#include "stb_image.h"
 #include "utils.hh"
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
@@ -21,7 +24,7 @@ float SCREEN_H = 1080.0f / 2;
 float FOV = 65.0f;
 float SENSITIVITY = 0.1f;
 
-const float NEAR_CLIP = 1.0f;
+const float NEAR_CLIP = 0.1f;
 const float FAR_CLIP = 1000.0f;
 
 double lastXPos = SCREEN_W / 2, lastYPos = SCREEN_H / 2;
@@ -81,12 +84,12 @@ int main()
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec2> UVs;
     std::vector<glm::vec3> normals;
-    loadObj("assets/bunny.obj", vertices, UVs, normals);
+    loadObj("assets/tree2.obj", vertices, UVs, normals);
 
     std::cout << "vertices: " << vertices.size() << " | UVs: " << UVs.size()
               << " | normals: " << normals.size() << std::endl;
 
-    // Buffers
+    // Vertices
     GLuint vertexBuffer;
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -96,6 +99,7 @@ int main()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
+    // Normals
     GLuint normalBuffer;
     glGenBuffers(1, &normalBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
@@ -104,6 +108,44 @@ int main()
 
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+    // UVs
+    GLuint uvBuffer;
+    glGenBuffers(1, &uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, UVs.size() * sizeof(glm::vec2), &UVs[0],
+                 GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+    // Texture
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glActiveTexture(
+        GL_TEXTURE0); // activate the texture unit first before binding texture
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    int width, height, nrChannels;
+    unsigned char *data =
+        stbi_load("assets/tree_palette.png", &width, &height, &nrChannels, 0);
+
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                     GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+
+    stbi_image_free(data);
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)(6 * sizeof(float)));
 
     glBindVertexArray(0); // stop recording
     glDisableVertexAttribArray(0);
@@ -120,7 +162,7 @@ int main()
 
         // Projection
         auto modelMatrix = glm::mat4(1.0);
-        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(50));
+        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(1));
 
         auto viewMatrix = camera->getWorldToViewMatrix();
         auto mvp = projection * viewMatrix * scaledModelMatrix;
@@ -129,6 +171,7 @@ int main()
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
         // Render model
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(modelVAO); // enable
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
         cubeShader.use();
@@ -178,7 +221,7 @@ void processInput(GLFWwindow *window)
 
     if (heldKeys[GLFW_KEY_SPACE])
         camera->moveUp(1.0f);
-    if (heldKeys[GLFW_KEY_LEFT_SHIFT])
+    if (heldKeys[GLFW_KEY_LEFT_CONTROL])
         camera->moveUp(-1.0f);
     if (heldKeys[GLFW_KEY_W])
         camera->moveForward(1.0f);
