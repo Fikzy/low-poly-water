@@ -1,5 +1,4 @@
 #define GLFW_INCLUDE_NONE
-#define STB_IMAGE_IMPLEMENTATION
 
 #include <GLFW/glfw3.h>
 #include <glad.h>
@@ -8,9 +7,9 @@
 #include <map>
 
 #include "camera.hh"
+#include "model.hh"
 #include "obj_loader.hh"
 #include "shader.hh"
-#include "stb_image.h"
 #include "utils.hh"
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
@@ -73,84 +72,14 @@ int main()
     projection = glm::perspective(
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 
-    // Shader
-    Shader cubeShader("cube.vert", "cube.frag");
+    // Shaders
+    // Shader untexturedModelShader("untextured.vert", "untextured.frag");
+    Shader texturedModelShader("textured.vert", "textured.frag");
 
-    // Model VAO
-    GLuint modelVAO;
-    glGenVertexArrays(1, &modelVAO);
-    glBindVertexArray(modelVAO); // start recording bindings
-
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec2> UVs;
-    std::vector<glm::vec3> normals;
-    loadObj("assets/tree2.obj", vertices, UVs, normals);
-
-    std::cout << "vertices: " << vertices.size() << " | UVs: " << UVs.size()
-              << " | normals: " << normals.size() << std::endl;
-
-    // Vertices
-    GLuint vertexBuffer;
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
-                 &vertices[0], GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-    // Normals
-    GLuint normalBuffer;
-    glGenBuffers(1, &normalBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3),
-                 &normals[0], GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-    // UVs
-    GLuint uvBuffer;
-    glGenBuffers(1, &uvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, UVs.size() * sizeof(glm::vec2), &UVs[0],
-                 GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-    // Texture
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(
-        GL_TEXTURE0); // activate the texture unit first before binding texture
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    int width, height, nrChannels;
-    unsigned char *data =
-        stbi_load("assets/tree_palette.png", &width, &height, &nrChannels, 0);
-
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                     GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-
-    stbi_image_free(data);
-
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)(6 * sizeof(float)));
-
-    glBindVertexArray(0); // stop recording
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // Models
+    // Model cube("assets/cube.obj", &untexturedModelShader);
+    Model tree("assets/tree2.obj", &texturedModelShader,
+               "assets/tree_palette.png");
 
     glClearColor(0, 0.1f, 0.2f, 0.8f);
     while (!glfwWindowShouldClose(window))
@@ -162,28 +91,16 @@ int main()
 
         // Projection
         auto modelMatrix = glm::mat4(1.0);
-        auto scaledModelMatrix = glm::scale(modelMatrix, glm::vec3(1));
-
         auto viewMatrix = camera->getWorldToViewMatrix();
-        auto mvp = projection * viewMatrix * scaledModelMatrix;
+        auto mvp = projection * viewMatrix * modelMatrix;
 
-        GLuint mvpLocation = glGetUniformLocation(cubeShader.id, "MVP");
-        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
-
-        // Render model
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glBindVertexArray(modelVAO); // enable
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-        cubeShader.use();
-        glBindVertexArray(0); // disable
+        // Render
+        // cube.render(mvp);
+        tree.render(mvp);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    glDeleteVertexArrays(1, &modelVAO);
-    glDeleteBuffers(1, &vertexBuffer);
-    glDeleteBuffers(1, &normalBuffer);
 
     glfwTerminate();
     return 0;
