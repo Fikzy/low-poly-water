@@ -77,9 +77,9 @@ int main()
     Shader texturedModelShader("textured.vert", "textured.frag");
 
     // Models
-    Model cube("assets/cube.obj", &untexturedModelShader);
-    Model tree("assets/tree2.obj", &texturedModelShader,
-               "assets/tree_palette.png");
+    Model waterPlane("assets/water_plane.obj", &untexturedModelShader);
+    Model scene("assets/lake_scene.obj", &texturedModelShader,
+                "assets/scene_palette.png");
 
     glClearColor(0, 0.1f, 0.2f, 0.8f);
     while (!glfwWindowShouldClose(window))
@@ -91,17 +91,12 @@ int main()
 
         // Projection
         auto modelMatrix = glm::mat4(1.0);
-        auto translatedModelMatrix =
-            glm::translate(modelMatrix, glm::vec3(0, 0, 3));
-
         auto viewMatrix = camera->getWorldToViewMatrix();
-
-        auto cubeMVP = projection * viewMatrix * modelMatrix;
-        auto treeMVP = projection * viewMatrix * translatedModelMatrix;
+        auto mvp = projection * viewMatrix * modelMatrix;
 
         // Render
-        cube.render(cubeMVP);
-        tree.render(treeMVP);
+        waterPlane.render(mvp);
+        scene.render(mvp);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
