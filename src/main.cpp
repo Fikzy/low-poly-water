@@ -73,11 +73,11 @@ int main()
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 
     // Shaders
-    // Shader untexturedModelShader("untextured.vert", "untextured.frag");
+    Shader untexturedModelShader("untextured.vert", "untextured.frag");
     Shader texturedModelShader("textured.vert", "textured.frag");
 
     // Models
-    // Model cube("assets/cube.obj", &untexturedModelShader);
+    Model cube("assets/cube.obj", &untexturedModelShader);
     Model tree("assets/tree2.obj", &texturedModelShader,
                "assets/tree_palette.png");
 
@@ -91,12 +91,17 @@ int main()
 
         // Projection
         auto modelMatrix = glm::mat4(1.0);
+        auto translatedModelMatrix =
+            glm::translate(modelMatrix, glm::vec3(0, 0, 3));
+
         auto viewMatrix = camera->getWorldToViewMatrix();
-        auto mvp = projection * viewMatrix * modelMatrix;
+
+        auto cubeMVP = projection * viewMatrix * modelMatrix;
+        auto treeMVP = projection * viewMatrix * translatedModelMatrix;
 
         // Render
-        // cube.render(mvp);
-        tree.render(mvp);
+        cube.render(cubeMVP);
+        tree.render(treeMVP);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

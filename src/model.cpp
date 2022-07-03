@@ -2,6 +2,7 @@
 
 #include <glad.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "obj_loader.hh"
@@ -39,7 +40,6 @@ Model::Model(const std::string objFile, Shader *shader)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
     glBindVertexArray(0); // stop recording bind calls
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -112,7 +112,6 @@ Model::Model(const std::string objFile, Shader *shader,
                           (void *)(6 * sizeof(float)));
 
     glBindVertexArray(0); // stop recording bind calls
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -127,13 +126,14 @@ void Model::render(glm::mat4x4 &mvp)
     GLuint mvpLocation = glGetUniformLocation(shader->id, "MVP");
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
+    glBindVertexArray(vao); // enable
+
+    shader->use();
+
     if (textures.size() > 0)
         glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-    glBindVertexArray(vao); // enable
-
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-    shader->use();
 
     glBindVertexArray(0); // disable
 }
