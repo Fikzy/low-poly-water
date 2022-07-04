@@ -3,10 +3,8 @@
 #include <glad.h>
 #include <glm/glm.hpp>
 
-#define REFLECTION_WIDTH 320
-#define REFLECTION_HEIGHT 180
-#define REFRACTION_WIDTH 1280
-#define REFRACTION_HEIGHT 720
+#define REFLECTION_RES 0.5
+#define REFRACTION_RES 1.0
 
 class WaterFrameBuffers
 {
@@ -35,6 +33,8 @@ public:
 
 private:
     int screenW, screenH;
+    int refractionW, refractionH;
+    int reflectionW, reflectionH;
 
     GLuint reflectionFrameBuffer;
     GLuint reflectionDepthBuffer;

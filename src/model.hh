@@ -2,18 +2,21 @@
 
 #include <glad.h>
 #include <glm/glm.hpp>
+#include <map>
 #include <string>
 #include <vector>
 
 #include "shader.hh"
+#include "texture.hh"
 
 class Model
 {
 public:
     Model(const std::string objFile, Shader *shader);
-    Model(const std::string objFile, Shader *shader,
-          const std::string &textureFile);
     ~Model();
+
+    void addTexture(std::string name, GLuint texture);
+    void removeTexture(std::string name);
 
     void render(glm::mat4x4 &mvp);
 
@@ -25,11 +28,9 @@ private:
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
 
-    // std::vector<unsigned int> vertexIndices;
-
-    std::vector<GLuint> buffers;
-    std::vector<GLuint> textures;
     GLuint vao;
+    std::vector<GLuint> buffers;
+    std::map<std::string, GLuint> shaderTextures;
 
     Shader *shader;
 };

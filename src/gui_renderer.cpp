@@ -43,6 +43,7 @@ void GuiRenderer::render()
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE,
                            glm::value_ptr(elm.second));
 
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, elm.first);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);

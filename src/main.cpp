@@ -10,6 +10,7 @@
 #include "gui_renderer.hh"
 #include "model.hh"
 #include "shader.hh"
+#include "texture.hh"
 #include "utils.hh"
 #include "water_frame_buffers.hh"
 
@@ -79,21 +80,26 @@ int main()
     Shader waterShader("water.vert", "water.frag");
     Shader sceneShader("scene.vert", "scene.frag");
 
-    // Models
-    Model waterPlane("assets/water_plane.obj", &waterShader);
-    Model scene("assets/lake_scene.obj", &sceneShader,
-                "assets/scene_palette.png");
-
     // Water
     WaterFrameBuffers fbos = WaterFrameBuffers(SCREEN_W, SCREEN_H);
     GLuint clipPlaneLocation = glGetUniformLocation(sceneShader.id, "plane");
 
-    // GUI
+    Model waterPlane("assets/water_plane.obj", &waterShader);
+    waterPlane.addTexture("reflectionTexture", fbos.reflectionTexture);
+    waterPlane.addTexture("refractionTexture", fbos.refractionTexture);
+
+    // Textures
+    GLuint sceneTexture = loadTexture("assets/scene_palette.png");
+
+    Model scene("assets/lake_scene.obj", &sceneShader);
+    scene.addTexture("texture", sceneTexture);
+
+    // GUI - Debug water textures
     auto guiRenderer = GuiRenderer();
-    guiRenderer.addElement(fbos.reflectionTexture, glm::vec2(-0.6, 0.5f),
-                           glm::vec2(0.3, -0.3));
-    guiRenderer.addElement(fbos.refractionTexture, glm::vec2(0.6, 0.5f),
-                           glm::vec2(0.3, -0.3));
+    // guiRenderer.addElement(fbos.reflectionTexture, glm::vec2(-0.6, 0.5f),
+    //                        glm::vec2(0.3, -0.3));
+    // guiRenderer.addElement(fbos.refractionTexture, glm::vec2(0.6, 0.5f),
+    //                        glm::vec2(0.3, -0.3));
 
     glClearColor(0, 0.1f, 0.2f, 0.8f);
     while (!glfwWindowShouldClose(window))
@@ -105,6 +111,8 @@ int main()
         processInput(window);
 
         auto modelMatrix = glm::mat4(1.0);
+        auto scaledModelMatrix =
+            glm::scale(glm::mat4(1.0), glm::vec3(50, 1, 50));
 
         // Move camera and under water
         auto dist = 2 * (camera->getPosition().y - WATER_LEVEL);
@@ -135,15 +143,21 @@ int main()
         fbos.bindRefractionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         scene.render(mvp);
-
-        // Render
         fbos.unbindCurrentFrameBuffer();
+
+        // Clear screen frame buffer
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Render scene
         sceneShader.use();
         glUniform4f(clipPlaneLocation, 0, -1, 0,
                     100000); // "disable" clipping plane
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        waterPlane.render(mvp);
         scene.render(mvp);
+
+        // Render water
+        mvp = projection * camera->getWorldToViewMatrix() * scaledModelMatrix;
+        waterShader.use();
+        waterPlane.render(mvp);
 
         // Render GUI
         guiRenderer.render();

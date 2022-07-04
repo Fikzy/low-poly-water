@@ -1,12 +1,20 @@
 #version 420 core
 
-in vec3 fragmentColor;
+in vec4 clipSpace;
 
-out vec3 color;
+uniform sampler2D reflectionTexture;
+uniform sampler2D refractionTexture;
 
-uniform sampler2D textureSampler;
+out vec4 color;
 
 void main()
 {
-    color = fragmentColor;
+    vec2 ndc = (clipSpace.xy / clipSpace.w) / 2 + 0.5;
+    vec2 reflectTexcoords = vec2(ndc.x, -ndc.y);
+    vec2 refractTexcoords = vec2(ndc.x, ndc.y);
+
+    vec4 reflectColor = texture(reflectionTexture, reflectTexcoords);
+    vec4 refractColor = texture(refractionTexture, refractTexcoords);
+
+    color = mix(reflectColor, refractColor, 0.5);
 }

@@ -1,13 +1,11 @@
 #include "model.hh"
 
-#define STB_IMAGE_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
 
 #include <glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
-#include "stb_image.h"
 #include "tiny_obj_loader.hh"
 
 void Model::fromObjFile(const std::string objFile)
@@ -65,51 +63,6 @@ Model::Model(const std::string objFile, Shader *shader)
     glBindVertexArray(vao); // start recording bind calls
 
     // Buffers
-    buffers.resize(2);
-    glGenBuffers(buffers.size(), &buffers[0]);
-
-    // - Vertices
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
-                 &vertices[0], GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-    // - Normals
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3),
-                 &normals[0], GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
-    // // - Vertex indicies
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[2]);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-    //              vertexIndices.size() * sizeof(unsigned int),
-    //              &vertexIndices[0], GL_STATIC_DRAW);
-
-    glBindVertexArray(0); // stop recording bind calls
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    // glDisableVertexAttribArray ?
-}
-
-Model::Model(const std::string objFile, Shader *shader,
-             const std::string &textureFile)
-    : shader(shader)
-{
-    // Parse data
-    fromObjFile(objFile);
-
-    // Model VAO
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao); // start recording bind calls
-
-    // Buffers
     buffers.resize(3);
     glGenBuffers(buffers.size(), &buffers[0]);
 
@@ -119,7 +72,7 @@ Model::Model(const std::string objFile, Shader *shader,
                  &vertices[0], GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
     // - Normals
     glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
@@ -127,7 +80,7 @@ Model::Model(const std::string objFile, Shader *shader,
                  &normals[0], GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
     // - Texture Coordinates
     glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
@@ -135,46 +88,10 @@ Model::Model(const std::string objFile, Shader *shader,
                  &texcoords[0], GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    // // - Vertex indicies
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[3]);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-    //              vertexIndices.size() * sizeof(unsigned int),
-    //              &vertexIndices[0], GL_STATIC_DRAW);
-
-    // Texture
-    textures.resize(1);
-    glGenTextures(1, &textures[0]);
-
-    // activate the texture unit before binding texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
-
-    // OpenGL textures are loaded left to right, bottom to top
-    stbi_set_flip_vertically_on_load(true); // VERY IMPORTANT!
-
-    int width, height, nrChannels;
-    unsigned char *data =
-        stbi_load(textureFile.c_str(), &width, &height, &nrChannels, 0);
-
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-                     nrChannels == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE,
-                     data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-
-    stbi_image_free(data);
-
-    glBindVertexArray(0); // stop recording bind calls
+    glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -184,6 +101,16 @@ Model::~Model()
     // glDeleteVertexArrays(1, &vao);
 }
 
+void Model::addTexture(std::string name, GLuint texture)
+{
+    shaderTextures.emplace(name, texture);
+}
+
+void Model::removeTexture(std::string name)
+{
+    shaderTextures.erase(name);
+}
+
 void Model::render(glm::mat4x4 &mvp)
 {
     shader->use();
@@ -191,16 +118,26 @@ void Model::render(glm::mat4x4 &mvp)
     GLuint mvpLocation = glGetUniformLocation(shader->id, "MVP");
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
+    int textureIdx = 0;
+    for (auto p : shaderTextures)
+    {
+        shader->setInt(p.first, textureIdx);
+        glActiveTexture(GL_TEXTURE0 + textureIdx);
+        glBindTexture(GL_TEXTURE_2D, p.second);
+        textureIdx++;
+    }
+
     glBindVertexArray(vao); // enable
 
-    if (textures.size() > 0)
-        glBindTexture(GL_TEXTURE_2D, textures[0]);
-
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-    // glDrawElements(GL_TRIANGLES, vertexIndices.size(), GL_UNSIGNED_INT, 0);
-
-    if (textures.size() > 0)
-        glBindTexture(GL_TEXTURE_2D, 0);
 
     glBindVertexArray(0); // disable
+
+    textureIdx = 0;
+    for (auto p : shaderTextures)
+    {
+        glActiveTexture(GL_TEXTURE0 + textureIdx);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        textureIdx++;
+    }
 }
