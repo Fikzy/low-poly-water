@@ -24,8 +24,10 @@ public:
     static float getDeltaTime();
     static void updateDeltaTime();
 
-private:
+public:
     glm::vec3 position;
+
+private:
     glm::vec3 direction;
     const glm::vec3 UP;
     float speed;

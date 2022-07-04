@@ -7,9 +7,15 @@ layout(location = 2) in vec2 vertexTexcoords;
 out vec2 texcoords;
 
 uniform mat4 MVP;
+uniform vec4 plane;
 
 void main()
 {
-    gl_Position = MVP * vec4(vertexPosition, 1.0);
+    vec4 worldPosition = vec4(1) * vec4(vertexPosition, 1.0);
+
+    gl_ClipDistance[0] = dot(worldPosition, plane);
+
+    gl_Position = MVP * worldPosition;
+
     texcoords = vertexTexcoords;
 }

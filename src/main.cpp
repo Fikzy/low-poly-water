@@ -34,6 +34,8 @@ Camera *camera;
 glm::highp_mat4 projection;
 std::map<int, bool> heldKeys;
 
+const float WATER_LEVEL = 1.0;
+
 int main()
 {
     srand(time(NULL));
@@ -74,20 +76,23 @@ int main()
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 
     // Shaders
-    Shader untexturedModelShader("untextured.vert", "untextured.frag");
-    Shader texturedModelShader("textured.vert", "textured.frag");
+    Shader waterShader("water.vert", "water.frag");
+    Shader sceneShader("scene.vert", "scene.frag");
 
     // Models
-    Model waterPlane("assets/water_plane.obj", &untexturedModelShader);
-    Model scene("assets/lake_scene.obj", &texturedModelShader,
+    Model waterPlane("assets/water_plane.obj", &waterShader);
+    Model scene("assets/lake_scene.obj", &sceneShader,
                 "assets/scene_palette.png");
 
     // Water
     WaterFrameBuffers fbos = WaterFrameBuffers(SCREEN_W, SCREEN_H);
+    GLuint clipPlaneLocation = glGetUniformLocation(sceneShader.id, "plane");
 
     // GUI
     auto guiRenderer = GuiRenderer();
     guiRenderer.addElement(fbos.reflectionTexture, glm::vec2(-0.6, 0.5f),
+                           glm::vec2(0.3, -0.3));
+    guiRenderer.addElement(fbos.refractionTexture, glm::vec2(0.6, 0.5f),
                            glm::vec2(0.3, -0.3));
 
     glClearColor(0, 0.1f, 0.2f, 0.8f);
@@ -95,21 +100,48 @@ int main()
     {
         Camera::updateDeltaTime();
 
+        glEnable(GL_CLIP_DISTANCE0);
+
         processInput(window);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        auto modelMatrix = glm::mat4(1.0);
+
+        // Move camera and under water
+        auto dist = 2 * (camera->getPosition().y - WATER_LEVEL);
+        camera->position.y -= dist;
+        camera->rotate(yaw, -pitch);
+
+        // Compute under water projection matrix
+        auto reflectionMVP =
+            projection * camera->getWorldToViewMatrix() * modelMatrix;
+
+        // Move camera back above water
+        camera->position.y += dist;
+        camera->rotate(yaw, pitch);
 
         // Projection
-        auto modelMatrix = glm::mat4(1.0);
-        auto viewMatrix = camera->getWorldToViewMatrix();
-        auto mvp = projection * viewMatrix * modelMatrix;
+        auto mvp = projection * camera->getWorldToViewMatrix() * modelMatrix;
 
-        // Render water frame buffers
+        // Render reflection texture
+        sceneShader.use();
+        glUniform4f(clipPlaneLocation, 0, 1, 0, -WATER_LEVEL);
         fbos.bindReflectionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        scene.render(reflectionMVP);
+
+        // Render refraction texture
+        sceneShader.use();
+        glUniform4f(clipPlaneLocation, 0, -1, 0, WATER_LEVEL);
+        fbos.bindRefractionFrameBuffer();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         scene.render(mvp);
-        fbos.unbindCurrentFrameBuffer();
 
         // Render
+        fbos.unbindCurrentFrameBuffer();
+        sceneShader.use();
+        glUniform4f(clipPlaneLocation, 0, -1, 0,
+                    100000); // "disable" clipping plane
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         waterPlane.render(mvp);
         scene.render(mvp);
 
@@ -135,7 +167,7 @@ void updateCameraRotation(GLFWwindow *window)
     lastXPos = xPos;
     lastYPos = yPos;
 
-    camera->rotate((float)yaw, (float)pitch);
+    camera->rotate(yaw, pitch);
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
