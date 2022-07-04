@@ -1,6 +1,6 @@
 #version 420 core
 
-in vec2 UV;
+in vec2 texcoords;
 
 out vec4 color;
 
@@ -8,5 +8,5 @@ uniform sampler2D textureSampler;
 
 void main()
 {
-    color = texture(textureSampler, UV);
+    color = texture(textureSampler, texcoords);
 }

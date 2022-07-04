@@ -9,7 +9,6 @@
 #include "camera.hh"
 #include "gui_renderer.hh"
 #include "model.hh"
-#include "obj_loader.hh"
 #include "shader.hh"
 #include "utils.hh"
 #include "water_frame_buffers.hh"
