@@ -14,13 +14,12 @@ Model::Model(const std::string objFile, Shader *shader)
     if (!loadObj(objFile, vertices, UVs, normals))
         return;
 
-    buffers.reserve(2);
-
     // Model VAO
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao); // start recording bind calls
 
     // Buffers
+    buffers.resize(2);
     glGenBuffers(2, &buffers[0]);
 
     // - Vertices
@@ -41,6 +40,9 @@ Model::Model(const std::string objFile, Shader *shader)
 
     glBindVertexArray(0); // stop recording bind calls
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // glDisableVertexAttribArray ?
 }
 
 Model::Model(const std::string objFile, Shader *shader,
@@ -83,7 +85,7 @@ Model::Model(const std::string objFile, Shader *shader,
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
     // Texture
-    textures.reserve(1);
+    textures.resize(1);
     glGenTextures(1, &textures[0]);
 
     // activate the texture unit before binding texture
@@ -113,6 +115,7 @@ Model::Model(const std::string objFile, Shader *shader,
 
     glBindVertexArray(0); // stop recording bind calls
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 Model::~Model()
@@ -123,17 +126,20 @@ Model::~Model()
 
 void Model::render(glm::mat4x4 &mvp)
 {
+    shader->use();
+
     GLuint mvpLocation = glGetUniformLocation(shader->id, "MVP");
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
     glBindVertexArray(vao); // enable
 
-    shader->use();
-
     if (textures.size() > 0)
         glBindTexture(GL_TEXTURE_2D, textures[0]);
 
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
+    if (textures.size() > 0)
+        glBindTexture(GL_TEXTURE_2D, 0);
 
     glBindVertexArray(0); // disable
 }

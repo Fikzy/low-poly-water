@@ -7,10 +7,12 @@
 #include <map>
 
 #include "camera.hh"
+#include "gui_renderer.hh"
 #include "model.hh"
 #include "obj_loader.hh"
 #include "shader.hh"
 #include "utils.hh"
+#include "water_frame_buffers.hh"
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
                   int mods);
@@ -81,6 +83,14 @@ int main()
     Model scene("assets/lake_scene.obj", &texturedModelShader,
                 "assets/scene_palette.png");
 
+    // Water
+    WaterFrameBuffers fbos = WaterFrameBuffers(SCREEN_W, SCREEN_H);
+
+    // GUI
+    auto guiRenderer = GuiRenderer();
+    guiRenderer.addElement(fbos.reflectionTexture, glm::vec2(-0.6, 0.5f),
+                           glm::vec2(0.3, -0.3));
+
     glClearColor(0, 0.1f, 0.2f, 0.8f);
     while (!glfwWindowShouldClose(window))
     {
@@ -94,9 +104,18 @@ int main()
         auto viewMatrix = camera->getWorldToViewMatrix();
         auto mvp = projection * viewMatrix * modelMatrix;
 
+        // Render water frame buffers
+        fbos.bindReflectionFrameBuffer();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        scene.render(mvp);
+        fbos.unbindCurrentFrameBuffer();
+
         // Render
         waterPlane.render(mvp);
         scene.render(mvp);
+
+        // Render GUI
+        guiRenderer.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

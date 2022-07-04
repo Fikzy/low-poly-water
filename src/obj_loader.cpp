@@ -1,6 +1,7 @@
 #include "obj_loader.hh"
 
 #include <fstream>
+#include <iostream>
 #include <regex>
 #include <sstream>
 
@@ -17,7 +18,7 @@ bool loadObj(const std::string path, std::vector<glm::vec3> &outVertices,
     std::ifstream file(path);
     if (!file)
     {
-        printf("Unbale to open file %s\n", path.c_str());
+        std::cout << "Unable to open file " << path.c_str() << std::endl;
         return false;
     }
 
@@ -33,7 +34,11 @@ bool loadObj(const std::string path, std::vector<glm::vec3> &outVertices,
         {
             continue;
         }
-        if (header.compare("v") == 0)
+        else if (header.compare("o") == 0)
+        {
+            continue;
+        }
+        else if (header.compare("v") == 0)
         {
             glm::vec3 vertex;
             lineSS >> vertex.x >> vertex.y >> vertex.z;
@@ -77,7 +82,7 @@ bool loadObj(const std::string path, std::vector<glm::vec3> &outVertices,
         }
         else
         {
-            printf("Unknown .obj line: %s", line.c_str());
+            // std::cout << "Unknown .obj line: " << line.c_str() << std::endl;
         }
     }
 
