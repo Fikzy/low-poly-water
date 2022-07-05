@@ -10,7 +10,7 @@ out vec4 clipSpace;
 
 void main()
 {
-    vec4 worldPosition = vec4(1) * vec4(vertexPosition, 1.0);
+    vec4 worldPosition = vec4(vertexPosition, 1.0);
 
     clipSpace = MVP * worldPosition;
     gl_Position = clipSpace;

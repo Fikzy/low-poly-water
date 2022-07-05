@@ -41,6 +41,9 @@ glm::highp_mat4 projection;
 std::map<int, bool> heldKeys;
 
 const float WATER_LEVEL = 1.0;
+const glm::vec4 REFLECTION_CLIP_PLANE = glm::vec4(0, 1, 0, -WATER_LEVEL);
+const glm::vec4 REFRACTION_CLIP_PLANE = glm::vec4(0, -1, 0, WATER_LEVEL);
+const glm::vec4 DISABLED_CLIP_PLANE = glm::vec4(0, -1, 0, 100000);
 
 int main()
 {
@@ -106,9 +109,6 @@ int main()
     auto scene = std::make_shared<Object>(sceneMesh, sceneShader);
     scene->addTexture("textureMap", &scenePalette);
 
-    GLuint sceneClipPlaneLocation =
-        glGetUniformLocation(sceneShader->id, "plane");
-
     // GUI - Debug water textures
     auto guiRenderer = GuiRenderer();
     // guiRenderer.addElement(fbos.reflectionTexture, glm::vec2(-0.6, 0.5f),
@@ -130,7 +130,7 @@ int main()
 
         // Render reflection texture
         sceneShader->use();
-        glUniform4f(sceneClipPlaneLocation, 0, 1, 0, -WATER_LEVEL);
+        sceneShader->setVec4("plane", REFLECTION_CLIP_PLANE);
         fbos.bindReflectionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         scene->render(projection, camera->getWorldToViewMatrix());
@@ -141,7 +141,7 @@ int main()
 
         // Render refraction texture
         sceneShader->use();
-        glUniform4f(sceneClipPlaneLocation, 0, -1, 0, WATER_LEVEL);
+        sceneShader->setVec4("plane", REFRACTION_CLIP_PLANE);
         fbos.bindRefractionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         scene->render(projection, camera->getWorldToViewMatrix());
@@ -152,8 +152,7 @@ int main()
 
         // Render scene
         sceneShader->use();
-        glUniform4f(sceneClipPlaneLocation, 0, -1, 0,
-                    100000); // "disable" clipping plane
+        sceneShader->setVec4("plane", DISABLED_CLIP_PLANE);
         scene->render(projection, camera->getWorldToViewMatrix());
 
         // Render water
@@ -162,7 +161,7 @@ int main()
         // Render GUI
         guiRenderer.render();
 
-        scene->rotation.y += 0.01f;
+        scene->rotation.y += 0.001f;
 
         glfwSwapBuffers(window);
         glfwPollEvents();
