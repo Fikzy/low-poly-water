@@ -22,5 +22,5 @@ void main()
     gl_Position = projection * view * model * worldPosition;
 
     texcoords = vertexTexcoords;
-    normal = normalize(vertexNormal);
+    normal = normalize(mat3(transpose(inverse(model))) * vertexNormal);
 }
