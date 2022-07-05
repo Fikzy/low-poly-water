@@ -5,10 +5,12 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <map>
+#include <memory>
 
 #include "camera.hh"
 #include "gui_renderer.hh"
-#include "model.hh"
+#include "mesh.hh"
+#include "object.hh"
 #include "shader.hh"
 #include "texture.hh"
 #include "utils.hh"
@@ -77,22 +79,29 @@ int main()
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 
     // Shaders
-    Shader waterShader("water.vert", "water.frag");
-    Shader sceneShader("scene.vert", "scene.frag");
+    auto waterShader = std::make_shared<Shader>("water.vert", "water.frag");
+    auto sceneShader = std::make_shared<Shader>("scene.vert", "scene.frag");
+
+    // Meshes
+    auto waterMesh = std::make_shared<Mesh>("assets/water_plane.obj");
+    auto sceneMesh = std::make_shared<Mesh>("assets/lake_scene.obj");
+
+    // Textures
+    GLuint scenePalette = loadTexture("assets/scene_palette.png");
 
     // Water
     WaterFrameBuffers fbos = WaterFrameBuffers(SCREEN_W, SCREEN_H);
-    GLuint clipPlaneLocation = glGetUniformLocation(sceneShader.id, "plane");
 
-    Model waterPlane("assets/water_plane.obj", &waterShader);
-    waterPlane.addTexture("reflectionTexture", fbos.reflectionTexture);
-    waterPlane.addTexture("refractionTexture", fbos.refractionTexture);
+    auto water = std::make_shared<Object>(waterMesh, waterShader);
+    water->addTexture("reflectionTexture", fbos.reflectionTexture);
+    water->addTexture("refractionTexture", fbos.refractionTexture);
 
-    // Textures
-    GLuint sceneTexture = loadTexture("assets/scene_palette.png");
+    // Scene
+    auto scene = std::make_shared<Object>(sceneMesh, sceneShader);
+    scene->addTexture("textureMap", scenePalette);
 
-    Model scene("assets/lake_scene.obj", &sceneShader);
-    scene.addTexture("textureMap", sceneTexture);
+    GLuint sceneClipPlaneLocation =
+        glGetUniformLocation(sceneShader->id, "plane");
 
     // GUI - Debug water textures
     auto guiRenderer = GuiRenderer();
@@ -101,7 +110,7 @@ int main()
     // guiRenderer.addElement(fbos.refractionTexture, glm::vec2(0.6, 0.5f),
     //                        glm::vec2(0.3, -0.3));
 
-    glClearColor(0, 0.1f, 0.2f, 0.8f);
+    glClearColor(0.7, 0.7f, 0.7f, 1.0f);
     while (!glfwWindowShouldClose(window))
     {
         Camera::updateDeltaTime();
@@ -131,33 +140,32 @@ int main()
         auto mvp = projection * camera->getWorldToViewMatrix() * modelMatrix;
 
         // Render reflection texture
-        sceneShader.use();
-        glUniform4f(clipPlaneLocation, 0, 1, 0, -WATER_LEVEL);
+        sceneShader->use();
+        glUniform4f(sceneClipPlaneLocation, 0, 1, 0, -WATER_LEVEL);
         fbos.bindReflectionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        scene.render(reflectionMVP);
+        scene->render(reflectionMVP);
 
         // Render refraction texture
-        sceneShader.use();
-        glUniform4f(clipPlaneLocation, 0, -1, 0, WATER_LEVEL);
+        sceneShader->use();
+        glUniform4f(sceneClipPlaneLocation, 0, -1, 0, WATER_LEVEL);
         fbos.bindRefractionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        scene.render(mvp);
+        scene->render(mvp);
         fbos.unbindCurrentFrameBuffer();
 
         // Clear screen frame buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Render scene
-        sceneShader.use();
-        glUniform4f(clipPlaneLocation, 0, -1, 0,
+        sceneShader->use();
+        glUniform4f(sceneClipPlaneLocation, 0, -1, 0,
                     100000); // "disable" clipping plane
-        scene.render(mvp);
+        scene->render(mvp);
 
         // Render water
         mvp = projection * camera->getWorldToViewMatrix() * scaledModelMatrix;
-        waterShader.use();
-        waterPlane.render(mvp);
+        water->render(mvp);
 
         // Render GUI
         guiRenderer.render();
