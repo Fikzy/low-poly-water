@@ -26,15 +26,16 @@ void Object::render(const glm::mat4 &projection, const glm::mat4 &view)
 {
     shader->use();
 
-    auto matrix = glm::mat4(1); // identity matrix
-    matrix = glm::scale(matrix, scale);
-    matrix = glm::rotate(matrix, rotation.x, X_AXIS);
-    matrix = glm::rotate(matrix, rotation.y, Y_AXIS);
-    matrix = glm::rotate(matrix, rotation.z, Z_AXIS);
-    matrix = glm::translate(matrix, position);
+    auto model = glm::mat4(1); // identity matrix
+    model = glm::scale(model, scale);
+    model = glm::rotate(model, rotation.x, X_AXIS);
+    model = glm::rotate(model, rotation.y, Y_AXIS);
+    model = glm::rotate(model, rotation.z, Z_AXIS);
+    model = glm::translate(model, position);
 
-    auto MVP = projection * view * matrix;
-    shader->setMat4("MVP", MVP);
+    shader->setMat4("projection", projection);
+    shader->setMat4("view", view);
+    shader->setMat4("model", model);
 
     int textureIdx = 0;
     for (auto p : shaderTextures)

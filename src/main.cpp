@@ -36,8 +36,10 @@ const float FAR_CLIP = 1000.0f;
 double lastXPos = SCREEN_W / 2, lastYPos = SCREEN_H / 2;
 double yaw = 0, pitch = 0, xPos, yPos;
 
-std::shared_ptr<Camera> camera;
-glm::highp_mat4 projection;
+std::shared_ptr<Camera> camera =
+    std::make_shared<Camera>(glm::vec3(-8.0f, 2.0f, 0.0f));
+glm::highp_mat4 projection = glm::perspective(
+    glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 std::map<int, bool> heldKeys;
 
 const float WATER_LEVEL = 1.0;
@@ -79,10 +81,6 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    // Camera
-    camera = std::make_shared<Camera>(glm::vec3(-8.0f, 2.0f, 0.0f));
-    projection = glm::perspective(
-        glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
     // Shaders
     auto waterShader = std::make_shared<Shader>("water.vert", "water.frag");
     auto sceneShader = std::make_shared<Shader>("scene.vert", "scene.frag");
@@ -122,6 +120,11 @@ int main()
         Camera::updateDeltaTime();
         processInput(window);
         glEnable(GL_CLIP_DISTANCE0);
+
+        sceneShader->use();
+        sceneShader->setVec3("lightDirection", glm::vec3(1, 1, 1));
+        sceneShader->setVec3("lightColor", glm::vec3(1));
+        sceneShader->setVec3("lightAmbient", glm::vec3(0.3));
 
         // Move camera and under water
         auto dist = 2 * (camera->getPosition().y - WATER_LEVEL);
