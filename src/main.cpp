@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_NONE
 
 #include <GLFW/glfw3.h>
+#include <functional>
 #include <glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
@@ -16,11 +17,13 @@
 #include "utils.hh"
 #include "water_frame_buffers.hh"
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action,
-                  int mods);
-void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void keyCallback(GLFWwindow *window, int key, int scancode, int action,
+                 int mods);
+void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 void updateCameraRotation(GLFWwindow *window);
 void processInput(GLFWwindow *window);
+
+std::vector<std::function<void(int, int)>> resizeCallbacks;
 
 float SCREEN_W = 1920.0f / 2;
 float SCREEN_H = 1080.0f / 2;
@@ -33,7 +36,7 @@ const float FAR_CLIP = 1000.0f;
 double lastXPos = SCREEN_W / 2, lastYPos = SCREEN_H / 2;
 double yaw = 0, pitch = 0, xPos, yPos;
 
-Camera *camera;
+std::shared_ptr<Camera> camera;
 glm::highp_mat4 projection;
 std::map<int, bool> heldKeys;
 
@@ -59,9 +62,9 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
     glfwSwapInterval(1);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -74,10 +77,9 @@ int main()
     glDepthFunc(GL_LESS);
 
     // Camera
-    camera = new Camera(glm::vec3(-8.0f, 2.0f, 0.0f));
+    camera = std::make_shared<Camera>(glm::vec3(-8.0f, 2.0f, 0.0f));
     projection = glm::perspective(
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
-
     // Shaders
     auto waterShader = std::make_shared<Shader>("water.vert", "water.frag");
     auto sceneShader = std::make_shared<Shader>("scene.vert", "scene.frag");
@@ -91,14 +93,18 @@ int main()
 
     // Water
     WaterFrameBuffers fbos = WaterFrameBuffers(SCREEN_W, SCREEN_H);
+    resizeCallbacks.push_back(
+        [&fbos](int w, int h) { fbos.setResolution(w, h); });
 
     auto water = std::make_shared<Object>(waterMesh, waterShader);
-    water->addTexture("reflectionTexture", fbos.reflectionTexture);
-    water->addTexture("refractionTexture", fbos.refractionTexture);
+    water->addTexture("reflectionTexture", &fbos.reflectionTexture);
+    water->addTexture("refractionTexture", &fbos.refractionTexture);
+
+    water->scale *= glm::vec3(50, 1, 50);
 
     // Scene
     auto scene = std::make_shared<Object>(sceneMesh, sceneShader);
-    scene->addTexture("textureMap", scenePalette);
+    scene->addTexture("textureMap", &scenePalette);
 
     GLuint sceneClipPlaneLocation =
         glGetUniformLocation(sceneShader->id, "plane");
@@ -114,44 +120,31 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         Camera::updateDeltaTime();
-
-        glEnable(GL_CLIP_DISTANCE0);
-
         processInput(window);
-
-        auto modelMatrix = glm::mat4(1.0);
-        auto scaledModelMatrix =
-            glm::scale(glm::mat4(1.0), glm::vec3(50, 1, 50));
+        glEnable(GL_CLIP_DISTANCE0);
 
         // Move camera and under water
         auto dist = 2 * (camera->getPosition().y - WATER_LEVEL);
         camera->position.y -= dist;
         camera->rotate(yaw, -pitch);
 
-        // Compute under water projection matrix
-        auto reflectionMVP =
-            projection * camera->getWorldToViewMatrix() * modelMatrix;
-
-        // Move camera back above water
-        camera->position.y += dist;
-        camera->rotate(yaw, pitch);
-
-        // Projection
-        auto mvp = projection * camera->getWorldToViewMatrix() * modelMatrix;
-
         // Render reflection texture
         sceneShader->use();
         glUniform4f(sceneClipPlaneLocation, 0, 1, 0, -WATER_LEVEL);
         fbos.bindReflectionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        scene->render(reflectionMVP);
+        scene->render(projection, camera->getWorldToViewMatrix());
+
+        // Move camera back above water
+        camera->position.y += dist;
+        camera->rotate(yaw, pitch);
 
         // Render refraction texture
         sceneShader->use();
         glUniform4f(sceneClipPlaneLocation, 0, -1, 0, WATER_LEVEL);
         fbos.bindRefractionFrameBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        scene->render(mvp);
+        scene->render(projection, camera->getWorldToViewMatrix());
         fbos.unbindCurrentFrameBuffer();
 
         // Clear screen frame buffer
@@ -161,14 +154,15 @@ int main()
         sceneShader->use();
         glUniform4f(sceneClipPlaneLocation, 0, -1, 0,
                     100000); // "disable" clipping plane
-        scene->render(mvp);
+        scene->render(projection, camera->getWorldToViewMatrix());
 
         // Render water
-        mvp = projection * camera->getWorldToViewMatrix() * scaledModelMatrix;
-        water->render(mvp);
+        water->render(projection, camera->getWorldToViewMatrix());
 
         // Render GUI
         guiRenderer.render();
+
+        scene->rotation.y += 0.01f;
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -192,8 +186,8 @@ void updateCameraRotation(GLFWwindow *window)
     camera->rotate(yaw, pitch);
 }
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action,
-                  int mods)
+void keyCallback(GLFWwindow *window, int key, int scancode, int action,
+                 int mods)
 {
     if (action == GLFW_REPEAT)
         return;
@@ -222,7 +216,7 @@ void processInput(GLFWwindow *window)
         camera->moveLeft(-1.0f);
 }
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     SCREEN_W = (float)width;
     SCREEN_H = (float)height;
@@ -230,4 +224,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
         glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
 
     glViewport(0, 0, width, height);
+
+    for (auto cb : resizeCallbacks)
+        cb(width, height);
 }

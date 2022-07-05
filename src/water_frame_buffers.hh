@@ -9,8 +9,9 @@
 class WaterFrameBuffers
 {
 public:
-    WaterFrameBuffers(int screenW, int screenH);
-    ~WaterFrameBuffers();
+    WaterFrameBuffers(float screenW, float screenH);
+
+    void setResolution(float screenW, float screenH);
 
     void bindReflectionFrameBuffer();
     void bindRefractionFrameBuffer();
@@ -20,10 +21,10 @@ public:
     void initialiseRefractionFrameBuffer();
     void bindFrameBuffer(GLuint frameBuffer, int width, int height);
 
-    GLuint createFrameBuffer();
-    GLuint createTextureAttachment(int width, int height);
-    GLuint createDepthTextureAttachment(int width, int height);
-    GLuint createDepthBufferAttachment(int width, int height);
+    void initFrameBuffer(GLuint *frameBuffer);
+    void initTextureAttachment(GLuint *texture, int width, int height);
+    void initDepthTextureAttachment(GLuint *texture, int width, int height);
+    void initDepthBufferAttachment(GLuint *depthBuffer, int width, int height);
 
 public:
     GLuint reflectionTexture;
@@ -32,7 +33,7 @@ public:
     GLuint refractionDepthTexture;
 
 private:
-    int screenW, screenH;
+    float screenW, screenH;
     int refractionW, refractionH;
     int reflectionW, reflectionH;
 

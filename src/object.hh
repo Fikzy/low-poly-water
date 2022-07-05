@@ -15,14 +15,17 @@ class Object
 public:
     Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader);
 
-    void addTexture(std::string name, GLuint texture);
+    void addTexture(std::string name, GLuint *texture);
     void removeTexture(std::string name);
 
-    void render(glm::mat4x4 &mvp);
+    void render(const glm::mat4 &projection, const glm::mat4 &view);
 
-private:
+public:
     std::shared_ptr<Mesh> mesh;
-
     std::shared_ptr<Shader> shader;
-    std::map<std::string, GLuint> shaderTextures;
+    std::map<std::string, GLuint *> shaderTextures;
+
+    glm::vec3 position;
+    glm::vec3 rotation;
+    glm::vec3 scale;
 };
