@@ -92,7 +92,7 @@ int main()
     GLuint sceneTexture = loadTexture("assets/scene_palette.png");
 
     Model scene("assets/lake_scene.obj", &sceneShader);
-    scene.addTexture("texture", sceneTexture);
+    scene.addTexture("textureMap", sceneTexture);
 
     // GUI - Debug water textures
     auto guiRenderer = GuiRenderer();
