@@ -8,18 +8,34 @@
 class Mesh
 {
 public:
+    Mesh(const std::string objFile, const GLenum draWmode);
     Mesh(const std::string objFile);
 
-    void render();
+    virtual void render();
 
-private:
-    void fromObjFile(const std::string objFile);
+protected:
+    Mesh(){};
 
-private:
+    void loadMeshData(const std::string objFile);
+
+protected:
+    const GLenum draWmode = GL_TRIANGLES;
+
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
 
     GLuint vao;
     std::vector<GLuint> buffers;
+};
+
+class Quad : public Mesh
+{
+public:
+    Quad();
+
+    void render() override;
+
+private:
+    std::vector<GLuint> indices;
 };

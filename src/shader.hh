@@ -6,11 +6,14 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 class Shader
 {
 public:
-    Shader(const GLchar *vertexPath, const GLchar *fragmentPath);
+    Shader(const std::string vertexPath, const std::string fragmentPath);
+    Shader(const std::string vertexPath, const std::string fragmentPath,
+           const std::string tessContPath, const std::string tessEvalPath);
 
     void use();
 
@@ -22,5 +25,9 @@ public:
     void setVec4(const std::string &name, const glm::vec4 &vec) const;
     void setMat4(const std::string &name, const glm::mat4 &mat) const;
 
-    unsigned int id;
+    GLuint id;
+
+protected:
+    GLuint compileShader(const std::string shaderPath, const GLenum shaderType);
+    void linkProgram(const std::vector<GLuint> shaders);
 };

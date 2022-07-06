@@ -14,7 +14,6 @@
 #include "object.hh"
 #include "shader.hh"
 #include "texture.hh"
-#include "utils.hh"
 #include "water_frame_buffers.hh"
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
@@ -36,10 +35,14 @@ const float FAR_CLIP = 1000.0f;
 double lastXPos = SCREEN_W / 2, lastYPos = SCREEN_H / 2;
 double yaw = 0, pitch = 0, xPos, yPos;
 
+bool lockMouse = true;
+bool wireframe = false;
+
 std::shared_ptr<Camera> camera =
     std::make_shared<Camera>(glm::vec3(-8.0f, 2.0f, 0.0f));
 glm::highp_mat4 projection = glm::perspective(
     glm::radians(FOV), (GLfloat)(SCREEN_W / SCREEN_H), NEAR_CLIP, FAR_CLIP);
+
 std::map<int, bool> heldKeys;
 
 const float WATER_LEVEL = 1.0;
@@ -82,11 +85,15 @@ int main()
     glDepthFunc(GL_LESS);
 
     // Shaders
-    auto waterShader = std::make_shared<Shader>("water.vert", "water.frag");
+    auto waterShader = std::make_shared<Shader>("water.vert", "water.frag",
+                                                "water.tesc", "water.tese");
     auto sceneShader = std::make_shared<Shader>("scene.vert", "scene.frag");
 
+    // Specific to water tesselation rendering
+    glPatchParameteri(GL_PATCH_VERTICES, 3); // Triangles
+
     // Meshes
-    auto waterMesh = std::make_shared<Mesh>("assets/water_plane.obj");
+    auto waterMesh = std::make_shared<Mesh>("assets/quad.obj", GL_PATCHES);
     auto sceneMesh = std::make_shared<Mesh>("assets/lake_scene.obj");
 
     // Textures
@@ -102,6 +109,7 @@ int main()
     water->addTexture("refractionTexture", &fbos.refractionTexture);
 
     water->scale *= glm::vec3(50, 1, 50);
+    water->position.y += 1;
 
     // Scene
     auto scene = std::make_shared<Object>(sceneMesh, sceneShader);
@@ -114,7 +122,8 @@ int main()
     // guiRenderer.addElement(fbos.refractionTexture, glm::vec2(0.6, 0.5f),
     //                        glm::vec2(0.3, -0.3));
 
-    glClearColor(0.7, 0.7f, 0.7f, 1.0f);
+    glClearColor(135.f / 255, 205.f / 255, 235.f / 255, 1.0f); // sky blue
+
     while (!glfwWindowShouldClose(window))
     {
         Camera::updateDeltaTime();
@@ -122,9 +131,12 @@ int main()
         glEnable(GL_CLIP_DISTANCE0);
 
         sceneShader->use();
-        sceneShader->setVec3("lightDirection", glm::vec3(1, 1, 1));
+        sceneShader->setVec3("lightDirection", glm::vec3(-1, -1, -1));
         sceneShader->setVec3("lightColor", glm::vec3(1));
         sceneShader->setVec3("lightAmbient", glm::vec3(0.3));
+
+        waterShader->use();
+        waterShader->setFloat("time", glfwGetTime());
 
         // Move camera and under water
         auto dist = 2 * (camera->getPosition().y - WATER_LEVEL);
@@ -164,8 +176,6 @@ int main()
         // Render GUI
         guiRenderer.render();
 
-        scene->rotation.y += 0.001f;
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -180,7 +190,7 @@ void updateCameraRotation(GLFWwindow *window)
 
     yaw += (xPos - lastXPos) * SENSITIVITY;
     pitch += (lastYPos - yPos) * SENSITIVITY;
-    pitch = clamp(pitch, 89.0f, -89.0f);
+    pitch = glm::clamp(pitch, -89.0, 89.0);
 
     lastXPos = xPos;
     lastYPos = yPos;
@@ -194,6 +204,22 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
     if (action == GLFW_REPEAT)
         return;
     heldKeys[key] = action == GLFW_PRESS;
+
+    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+    {
+        wireframe = !wireframe;
+        std::cout << "WIREFRAME: " << (wireframe ? "ON" : "OFF") << std::endl;
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+    }
+
+    if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
+    {
+        lockMouse = !lockMouse;
+        std::cout << "LOCK MOUSE: " << (lockMouse ? "YES" : "NO") << std::endl;
+        std::cout << "LOCK MOUSE: " << (lockMouse ? "YES" : "NO") << std::endl;
+        glfwSetInputMode(window, GLFW_CURSOR,
+                         lockMouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    }
 }
 
 void processInput(GLFWwindow *window)

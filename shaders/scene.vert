@@ -22,5 +22,12 @@ void main()
     gl_Position = projection * view * model * worldPosition;
 
     texcoords = vertexTexcoords;
-    normal = normalize(mat3(transpose(inverse(model))) * vertexNormal);
+
+    // normal = normalize(mat3(transpose(inverse(model))) * vertexNormal);
+
+    /* Expensive word space normal computation, not needed in our case since
+     * nothing is rotated and we use a single directional light
+     */
+
+    normal = normalize(vertexNormal);
 }

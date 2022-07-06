@@ -30,6 +30,7 @@ void Object::render(const glm::mat4 &projection, const glm::mat4 &view)
 
     auto model = glm::mat4(1); // identity matrix
     model = glm::scale(model, scale);
+    // FIXME: rotation along more than one axis is broken
     model = glm::rotate(model, rotation.x, X_AXIS);
     model = glm::rotate(model, rotation.y, Y_AXIS);
     model = glm::rotate(model, rotation.z, Z_AXIS);

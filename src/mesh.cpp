@@ -7,10 +7,11 @@
 
 #include "tiny_obj_loader.hh"
 
-Mesh::Mesh(const std::string objFile)
+Mesh::Mesh(const std::string objFile, const GLenum draWmode)
+    : draWmode(draWmode)
 {
     // Parse data
-    fromObjFile(objFile);
+    loadMeshData(objFile);
 
     // Mesh VAO
     glGenVertexArrays(1, &vao);
@@ -49,9 +50,14 @@ Mesh::Mesh(const std::string objFile)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Mesh::fromObjFile(const std::string objFile)
+Mesh::Mesh(const std::string objFile)
+    : Mesh(objFile, GL_TRIANGLES)
+{}
+
+void Mesh::loadMeshData(const std::string objFile)
 {
     tinyobj::ObjReaderConfig reader_config;
+    // reader_config.triangulate = true; // default
     tinyobj::ObjReader reader;
     if (!reader.ParseFromFile(objFile, reader_config))
     {
@@ -96,7 +102,7 @@ void Mesh::render()
 {
     glBindVertexArray(vao); // enable
 
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glDrawArrays(draWmode, 0, vertices.size());
 
     glBindVertexArray(0); // disable
 }

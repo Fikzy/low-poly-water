@@ -13,8 +13,11 @@ void main()
     vec2 reflectTexcoords = vec2(ndc.x, -ndc.y);
     vec2 refractTexcoords = vec2(ndc.x, ndc.y);
 
+    refractTexcoords = clamp(refractTexcoords, 0.001, 0.999);
+
     vec4 reflectColor = texture(reflectionTexture, reflectTexcoords);
     vec4 refractColor = texture(refractionTexture, refractTexcoords);
 
     color = mix(reflectColor, refractColor, 0.5);
+    color = mix(color, vec4(0, 0.3, 0.5, 1), 0.2); // blue tint
 }

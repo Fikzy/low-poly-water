@@ -15,7 +15,7 @@ float ambientStrength = 0.3;
 
 void main()
 {
-    vec3 lightDir = normalize(lightDirection);
+    vec3 lightDir = normalize(-lightDirection);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
 
