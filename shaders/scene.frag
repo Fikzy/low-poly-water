@@ -11,8 +11,6 @@ uniform vec3 lightAmbient;
 
 out vec4 color;
 
-float ambientStrength = 0.3;
-
 void main()
 {
     vec3 lightDir = normalize(-lightDirection);

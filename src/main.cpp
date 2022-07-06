@@ -50,6 +50,10 @@ const glm::vec4 REFLECTION_CLIP_PLANE = glm::vec4(0, 1, 0, -WATER_LEVEL);
 const glm::vec4 REFRACTION_CLIP_PLANE = glm::vec4(0, -1, 0, WATER_LEVEL);
 const glm::vec4 DISABLED_CLIP_PLANE = glm::vec4(0, -1, 0, 100000);
 
+const glm::vec3 lightDirection = glm::vec3(-0.1, -1, -0.1);
+const glm::vec3 lightColor = glm::vec3(1);
+const glm::vec3 lightAmbient = glm::vec3(0.3);
+
 int main()
 {
     srand(time(NULL));
@@ -131,13 +135,16 @@ int main()
         glEnable(GL_CLIP_DISTANCE0);
 
         sceneShader->use();
-        sceneShader->setVec3("lightDirection", glm::vec3(-1, -1, -1));
-        sceneShader->setVec3("lightColor", glm::vec3(1));
-        sceneShader->setVec3("lightAmbient", glm::vec3(0.3));
+        sceneShader->setVec3("lightDirection", lightDirection);
+        sceneShader->setVec3("lightColor", lightColor);
+        sceneShader->setVec3("lightAmbient", lightAmbient);
 
         waterShader->use();
         waterShader->setFloat("time", glfwGetTime());
         waterShader->setVec3("cameraPosition", camera->getPosition());
+        waterShader->setVec3("lightDirection", lightDirection);
+        waterShader->setVec3("lightColor", lightColor);
+        waterShader->setVec3("lightAmbient", lightAmbient);
 
         // Move camera and under water
         auto dist = 2 * (camera->getPosition().y - WATER_LEVEL);

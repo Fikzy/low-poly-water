@@ -7,7 +7,9 @@ out vec4 clipSpace;
 uniform float time;
 
 in vec3 vertexWorldPos[];
+in vec3 vertexCameraPos[];
 out vec3 vertexWorldPosition;
+out vec3 vertexCameraPosition;
 
 float randHeight(vec2 co)
 {
@@ -31,12 +33,19 @@ void main()
     gl_Position = clipSpace;
 
     // wave effect
-    gl_Position.y +=
+    float offset =
         sin(gl_Position.x + time) * 0.1 + sin(gl_Position.z + time) * 0.1;
-
     // random "bumps"
-    gl_Position.y += randHeight(vec2(u)) * 0.1;
+    offset += randHeight(vec2(u)) * 0.1;
+
+    gl_Position.y += offset;
 
     vertexWorldPosition =
         u * vertexWorldPos[0] + v * vertexWorldPos[1] + w * vertexWorldPos[2];
+    vertexWorldPosition.y += offset;
+
+    vertexCameraPosition = u * vertexCameraPos[0] + v * vertexCameraPos[1]
+        + w * vertexCameraPos[2];
+
+    vertexCameraPosition.y += offset;
 }
