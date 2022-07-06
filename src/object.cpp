@@ -9,6 +9,8 @@ const glm::vec3 Z_AXIS = glm::vec3(0, 0, 1);
 Object::Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader)
     : mesh(mesh)
     , shader(shader)
+    , position(glm::vec3(0))
+    , rotation(glm::vec3(0))
     , scale(glm::vec3(1))
 {}
 
