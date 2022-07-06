@@ -122,9 +122,9 @@ int main()
 
     // GUI - Debug water textures
     auto guiRenderer = GuiRenderer();
-    // guiRenderer.addElement(fbos.reflectionTexture, glm::vec2(-0.6, 0.5f),
+    // guiRenderer.addElement(&fbos.reflectionTexture, glm::vec2(-0.6, 0.5f),
     //                        glm::vec2(0.3, -0.3));
-    // guiRenderer.addElement(fbos.refractionTexture, glm::vec2(0.6, 0.5f),
+    // guiRenderer.addElement(&fbos.refractionTexture, glm::vec2(0.6, 0.5f),
     //                        glm::vec2(0.3, -0.3));
 
     glClearColor(135.f / 255, 205.f / 255, 235.f / 255, 1.0f); // sky blue

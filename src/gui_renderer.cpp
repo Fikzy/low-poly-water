@@ -21,7 +21,7 @@ GuiRenderer::GuiRenderer()
     glBindVertexArray(0);
 }
 
-void GuiRenderer::addElement(GLuint texture, glm::vec2 position,
+void GuiRenderer::addElement(GLuint *texture, glm::vec2 position,
                              glm::vec2 scale)
 {
     auto transform = glm::mat4(1.0);
@@ -44,7 +44,7 @@ void GuiRenderer::render()
                            glm::value_ptr(elm.second));
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, elm.first);
+        glBindTexture(GL_TEXTURE_2D, *elm.first);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
     }

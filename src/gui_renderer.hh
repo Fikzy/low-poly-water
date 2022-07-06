@@ -13,7 +13,7 @@ class GuiRenderer
 public:
     GuiRenderer();
 
-    void addElement(GLuint texture, glm::vec2 position, glm::vec2 scale);
+    void addElement(GLuint *texture, glm::vec2 position, glm::vec2 scale);
 
     void render();
 
@@ -21,5 +21,5 @@ private:
     GLuint quadVAO;
     Shader shader;
 
-    std::vector<std::pair<GLuint, glm::mat4>> elements;
+    std::vector<std::pair<GLuint *, glm::mat4>> elements;
 };
