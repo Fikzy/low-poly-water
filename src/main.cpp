@@ -50,7 +50,7 @@ const glm::vec4 REFLECTION_CLIP_PLANE = glm::vec4(0, 1, 0, -WATER_LEVEL);
 const glm::vec4 REFRACTION_CLIP_PLANE = glm::vec4(0, -1, 0, WATER_LEVEL);
 const glm::vec4 DISABLED_CLIP_PLANE = glm::vec4(0, -1, 0, 100000);
 
-const glm::vec3 lightDirection = glm::vec3(-0.1, -1, -0.1);
+const glm::vec3 lightPosition = glm::vec3(5, 10, 5);
 const glm::vec3 lightColor = glm::vec3(1);
 const glm::vec3 lightAmbient = glm::vec3(0.3);
 
@@ -89,8 +89,8 @@ int main()
     glDepthFunc(GL_LESS);
 
     // Shaders
-    auto waterShader = std::make_shared<Shader>("water.vert", "water.frag",
-                                                "water.tesc", "water.tese");
+    auto waterShader = std::make_shared<Shader>(
+        "water.vert", "water.frag", "water.tesc", "water.tese", "water.geom");
     auto sceneShader = std::make_shared<Shader>("scene.vert", "scene.frag");
 
     // Specific to water tesselation rendering
@@ -136,14 +136,14 @@ int main()
         glEnable(GL_CLIP_DISTANCE0);
 
         sceneShader->use();
-        sceneShader->setVec3("lightDirection", lightDirection);
+        sceneShader->setVec3("lightPosition", lightPosition);
         sceneShader->setVec3("lightColor", lightColor);
         sceneShader->setVec3("lightAmbient", lightAmbient);
 
         waterShader->use();
         waterShader->setFloat("time", glfwGetTime());
         waterShader->setVec3("cameraPosition", camera->getPosition());
-        waterShader->setVec3("lightDirection", lightDirection);
+        waterShader->setVec3("lightPosition", lightPosition);
         waterShader->setVec3("lightColor", lightColor);
         waterShader->setVec3("lightAmbient", lightAmbient);
 

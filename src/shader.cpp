@@ -6,17 +6,23 @@
 
 Shader::Shader(const std::string vertexPath, const std::string fragmentPath)
 {
-    linkProgram({ compileShader(vertexPath, GL_VERTEX_SHADER),
-                  compileShader(fragmentPath, GL_FRAGMENT_SHADER) });
+    linkProgram({
+        compileShader(vertexPath, GL_VERTEX_SHADER),
+        compileShader(fragmentPath, GL_FRAGMENT_SHADER),
+    });
 }
 
 Shader::Shader(const std::string vertexPath, const std::string fragmentPath,
-               const std::string tessContPath, const std::string tessEvalPath)
+               const std::string tessContPath, const std::string tessEvalPath,
+               const std::string geomPath)
 {
-    linkProgram({ compileShader(vertexPath, GL_VERTEX_SHADER),
-                  compileShader(tessContPath, GL_TESS_CONTROL_SHADER),
-                  compileShader(tessEvalPath, GL_TESS_EVALUATION_SHADER),
-                  compileShader(fragmentPath, GL_FRAGMENT_SHADER) });
+    linkProgram({
+        compileShader(vertexPath, GL_VERTEX_SHADER),
+        compileShader(tessContPath, GL_TESS_CONTROL_SHADER),
+        compileShader(tessEvalPath, GL_TESS_EVALUATION_SHADER),
+        compileShader(fragmentPath, GL_FRAGMENT_SHADER),
+        compileShader(geomPath, GL_GEOMETRY_SHADER),
+    });
 }
 
 GLuint Shader::compileShader(const std::string shaderPath,

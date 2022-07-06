@@ -1,8 +1,8 @@
 #version 420 core
 
-in vec4 clipSpace;
-in vec3 vertexWorldPosition;
-in vec3 vertexCameraPosition;
+in vec4 gClipSpace;
+in vec3 gNormal;
+in vec3 gWorldPosition;
 
 uniform sampler2D reflectionTexture;
 uniform sampler2D refractionTexture;
@@ -10,7 +10,7 @@ uniform sampler2D depthTextureMap;
 
 uniform vec3 cameraPosition;
 
-uniform vec3 lightDirection;
+uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform vec3 lightAmbient;
 
@@ -21,7 +21,7 @@ float far = 1000;
 
 void main()
 {
-    vec2 ndc = (clipSpace.xy / clipSpace.w) / 2 + 0.5;
+    vec2 ndc = (gClipSpace.xy / gClipSpace.w) / 2 + 0.5;
     vec2 reflectTexcoords = vec2(ndc.x, -ndc.y);
     vec2 refractTexcoords = vec2(ndc.x, ndc.y);
 
@@ -39,20 +39,16 @@ void main()
     vec4 reflectColor = texture(reflectionTexture, reflectTexcoords);
     vec4 refractColor = texture(refractionTexture, refractTexcoords);
 
-    vec3 dxPos = dFdx(vertexCameraPosition);
-    vec3 dyPos = dFdy(vertexCameraPosition);
-    vec3 vertexNormal = normalize(cross(dxPos, dyPos));
-
-    vec3 viewVector = normalize(cameraPosition - vertexWorldPosition);
+    vec3 viewVector = normalize(cameraPosition - gWorldPosition);
     float refractiveFactor = dot(viewVector, vec3(0, 1, 0));
 
     color = mix(reflectColor, refractColor, refractiveFactor);
     color = mix(color, vec4(0, 0.3, 0.5, 1), 0.2); // blue tint
 
-    vec3 lightDir = normalize(-lightDirection);
-    float diff = max(dot(vertexNormal, lightDir), 0.0);
+    vec3 lightDir = normalize(lightPosition);
+    float diff = max(dot(gNormal, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
-
     color = vec4(lightAmbient + diffuse, 1) * color;
-    color.a = clamp(waterDepth / 5, 0, 1);
+
+    color.a = clamp(waterDepth / 10, 0, 1);
 }

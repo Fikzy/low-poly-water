@@ -15,19 +15,18 @@ out vec3 normal;
 
 void main()
 {
-    vec4 worldPosition = vec4(vertexPosition, 1.0);
+    vec4 worldPosition = model * vec4(vertexPosition, 1.0);
 
     gl_ClipDistance[0] = dot(worldPosition, plane);
 
-    gl_Position = projection * view * model * worldPosition;
+    gl_Position = projection * view * worldPosition;
 
     texcoords = vertexTexcoords;
-
-    // normal = normalize(mat3(transpose(inverse(model))) * vertexNormal);
 
     /* Expensive word space normal computation, not needed in our case since
      * nothing is rotated and we use a single directional light
      */
+    // normal = normalize(mat3(transpose(inverse(model))) * vertexNormal);
 
     normal = normalize(vertexNormal);
 }

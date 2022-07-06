@@ -5,7 +5,7 @@ in vec3 normal;
 
 uniform sampler2D textureMap;
 
-uniform vec3 lightDirection;
+uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform vec3 lightAmbient;
 
@@ -13,7 +13,7 @@ out vec4 color;
 
 void main()
 {
-    vec3 lightDir = normalize(-lightDirection);
+    vec3 lightDir = normalize(lightPosition);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
 
