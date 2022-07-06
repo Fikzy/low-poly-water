@@ -111,6 +111,7 @@ int main()
     auto water = std::make_shared<Object>(waterMesh, waterShader);
     water->addTexture("reflectionTexture", &fbos.reflectionTexture);
     water->addTexture("refractionTexture", &fbos.refractionTexture);
+    water->addTexture("depthTextureMap", &fbos.refractionDepthTexture);
 
     water->scale *= glm::vec3(50, 1, 50);
     water->position.y += 1;
@@ -179,7 +180,10 @@ int main()
         scene->render(projection, camera->getWorldToViewMatrix());
 
         // Render water
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         water->render(projection, camera->getWorldToViewMatrix());
+        glDisable(GL_BLEND);
 
         // Render GUI
         guiRenderer.render();

@@ -6,6 +6,7 @@ in vec3 vertexCameraPosition;
 
 uniform sampler2D reflectionTexture;
 uniform sampler2D refractionTexture;
+uniform sampler2D depthTextureMap;
 
 uniform vec3 cameraPosition;
 
@@ -15,11 +16,23 @@ uniform vec3 lightAmbient;
 
 out vec4 color;
 
+float near = 0.1;
+float far = 1000;
+
 void main()
 {
     vec2 ndc = (clipSpace.xy / clipSpace.w) / 2 + 0.5;
     vec2 reflectTexcoords = vec2(ndc.x, -ndc.y);
     vec2 refractTexcoords = vec2(ndc.x, ndc.y);
+
+    float depth = texture(depthTextureMap, refractTexcoords).r;
+    float floorDistance =
+        2 * near * far / (far + near - (2 * depth - 1.0) * (far - near));
+
+    depth = gl_FragCoord.z;
+    float waterDistance =
+        2 * near * far / (far + near - (2 * depth - 1.0) * (far - near));
+    float waterDepth = floorDistance - waterDistance;
 
     refractTexcoords = clamp(refractTexcoords, 0.001, 0.999);
 
@@ -41,4 +54,5 @@ void main()
     vec3 diffuse = diff * lightColor;
 
     color = vec4(lightAmbient + diffuse, 1) * color;
+    color.a = clamp(waterDepth / 5, 0, 1);
 }
