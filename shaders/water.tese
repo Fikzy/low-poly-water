@@ -6,6 +6,9 @@ out vec4 clipSpace;
 
 uniform float time;
 
+in vec3 vertexWorldPos[];
+out vec3 vertexWorldPosition;
+
 float randHeight(vec2 co)
 {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
@@ -33,4 +36,7 @@ void main()
 
     // random "bumps"
     gl_Position.y += randHeight(vec2(u)) * 0.1;
+
+    vertexWorldPosition =
+        u * vertexWorldPos[0] + v * vertexWorldPos[1] + w * vertexWorldPos[2];
 }

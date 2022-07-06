@@ -137,6 +137,7 @@ int main()
 
         waterShader->use();
         waterShader->setFloat("time", glfwGetTime());
+        waterShader->setVec3("cameraPosition", camera->getPosition());
 
         // Move camera and under water
         auto dist = 2 * (camera->getPosition().y - WATER_LEVEL);

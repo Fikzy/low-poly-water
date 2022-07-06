@@ -9,6 +9,7 @@ uniform mat4 view;
 uniform mat4 model;
 
 out vec4 clipSpace;
+out vec3 vertexWorldPosisiton;
 
 void main()
 {
@@ -16,4 +17,6 @@ void main()
 
     clipSpace = projection * view * model * worldPosition;
     gl_Position = clipSpace;
+
+    vertexWorldPosisiton = worldPosition.xyz;
 }

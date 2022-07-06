@@ -1,9 +1,12 @@
 #version 420 core
 
 in vec4 clipSpace;
+in vec3 vertexWorldPosition;
 
 uniform sampler2D reflectionTexture;
 uniform sampler2D refractionTexture;
+
+uniform vec3 cameraPosition;
 
 out vec4 color;
 
@@ -18,6 +21,9 @@ void main()
     vec4 reflectColor = texture(reflectionTexture, reflectTexcoords);
     vec4 refractColor = texture(refractionTexture, refractTexcoords);
 
-    color = mix(reflectColor, refractColor, 0.5);
+    vec3 viewVector = normalize(cameraPosition - vertexWorldPosition);
+    float refractiveFactor = dot(viewVector, vec3(0, 1, 0));
+
+    color = mix(reflectColor, refractColor, refractiveFactor);
     color = mix(color, vec4(0, 0.3, 0.5, 1), 0.2); // blue tint
 }
